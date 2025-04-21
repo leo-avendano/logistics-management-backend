@@ -1,0 +1,8 @@
+{
+  "projects": {
+    "default": "logistics-management-26709",
+    "prod": "logistics-management-26709"
+  },
+  "targets": {},
+  "etags": {}
+}

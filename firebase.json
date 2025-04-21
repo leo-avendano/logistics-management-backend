@@ -1,0 +1,61 @@
+{
+  "firestore": {
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json"
+  },
+  "functions": [
+    {
+      "source": "functions",
+      "codebase": "default",
+      "ignore": [
+        "node_modules",
+        ".git",
+        "firebase-debug.log",
+        "firebase-debug.*.log",
+        "*.local"
+      ],
+      "predeploy": [
+        "npm --prefix \"./functions\" run lint",
+        "npm --prefix \"./functions\" run build"
+      ]
+    }
+  ],
+  "hosting": {
+    "public": "public",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
+    "rewrites": [
+      {
+        "source": "/api/hello",
+        "function": "helloWorld"
+      },
+      {
+        "source": "/api/package",
+        "function": "addPackageAndRoute"
+      },
+      {
+        "source": "/api/route/destination",
+        "function": "modifyRouteDestination"
+      },
+      {
+        "source": "/api/route/assign",
+        "function": "assignRouteToRepartidor"
+      },
+      {
+        "source": "/api/route/unassign",
+        "function": "unassignRouteFromRepartidor"
+      },
+      {
+        "source": "/api/package/confirm",
+        "function": "confirmPackageDelivery"
+      },
+      {
+        "source": "/api/route/start",
+        "function": "startPendingRoute"
+      }
+    ]
+  }
+}
