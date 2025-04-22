@@ -95,37 +95,39 @@
       firebase.initializeApp(firebaseConfig);
       const auth = firebase.auth();
 
-      const urlParams = new URLSearchParams(window.location.search);
-      const mode = urlParams.get("mode");
-      const oobCode = urlParams.get("oobCode");
+      function handleAuth() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const mode = urlParams.get("mode");
+        const oobCode = urlParams.get("oobCode");
 
-      const verifyUI = document.getElementById("verifyEmailUI");
-      const resetUI = document.getElementById("resetPasswordUI");
-      const resetError = document.getElementById("resetError");
-      const generalError = document.getElementById("generalError");
+        const verifyUI = document.getElementById("verifyEmailUI");
+        const resetUI = document.getElementById("resetPasswordUI");
+        const resetError = document.getElementById("resetError");
+        const generalError = document.getElementById("generalError");
 
-      if (mode === "resetPassword") {
-        if (!oobCode) {
-          showGeneralError("Código inválido para cambio de contraseña.");
-          return;
+        if (mode === "resetPassword") {
+          if (!oobCode) {
+            showGeneralError("Código inválido para cambio de contraseña.");
+            return;
+          }
+          resetUI.classList.remove("hidden");
+        } else if (mode === "verifyEmail") {
+          if (!oobCode) {
+            showGeneralError("Código inválido para verificación.");
+            return;
+          }
+
+          auth
+            .applyActionCode(oobCode)
+            .then(() => {
+              verifyUI.classList.remove("hidden");
+            })
+            .catch(() => {
+              showGeneralError("Este enlace ya fue usado o no es válido.");
+            });
+        } else {
+          showGeneralError("Acción desconocida.");
         }
-        resetUI.classList.remove("hidden");
-      } else if (mode === "verifyEmail") {
-        if (!oobCode) {
-          showGeneralError("Código inválido para verificación.");
-          return;
-        }
-
-        auth
-          .applyActionCode(oobCode)
-          .then(() => {
-            verifyUI.classList.remove("hidden");
-          })
-          .catch(() => {
-            showGeneralError("Este enlace ya fue usado o no es válido.");
-          });
-      } else {
-        showGeneralError("Acción desconocida.");
       }
 
       function resetPassword() {
@@ -159,6 +161,9 @@
         generalError.textContent = msg;
         generalError.classList.remove("hidden");
       }
+
+      // Llamar a la función handleAuth para ejecutar la lógica
+      handleAuth();
     </script>
   </body>
 </html>
