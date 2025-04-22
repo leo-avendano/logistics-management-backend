@@ -6,25 +6,42 @@
     <title>Autenticación Firebase</title>
     <style>
       body {
-        font-family: "Arial", sans-serif;
-        background-color: #f1f1f1;
+        font-family: Arial, sans-serif;
+        background: #f1f1f1;
         display: flex;
         align-items: center;
         justify-content: center;
         height: 100vh;
         margin: 0;
       }
+      .logo {
+        display: block;
+        max-width: 120px;
+        margin: 0 auto 16px;
+      }
+      .title {
+        font-weight: bold;
+        font-size: 24px;
+        text-align: center;
+        color: #333;
+        margin-top: 0;
+        margin-bottom: 8px;
+      }
       .container {
-        background-color: #fff;
+        background: white;
         padding: 30px;
         border-radius: 12px;
         box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-        max-width: 400px;
         width: 100%;
+        max-width: 550px;
+      }
+      #verifyEmailUI {
         text-align: center;
       }
+
       h2 {
-        margin-bottom: 16px;
+        text-align: center;
+        margin-bottom: 24px;
       }
       input {
         width: 100%;
@@ -37,20 +54,42 @@
       button {
         width: 100%;
         padding: 12px;
-        background-color: #4285f4;
-        color: white;
-        font-size: 16px;
+        background-color: #ffc107;
         border: none;
+        color: rgb(0, 0, 0);
+        font-size: 18px;
+        font-weight: bold;
         border-radius: 8px;
         cursor: pointer;
       }
-      .message {
+      .error {
+        color: red;
         font-size: 14px;
-        margin-bottom: 16px;
-        color: #d50000;
+        margin-bottom: 8px;
+        text-align: center;
       }
-      .success {
-        color: #2e7d32;
+      .input-group {
+        position: relative;
+        width: 100%;
+        margin-bottom: 16px;
+      }
+      .input-group input {
+        width: 100%;
+        padding: 12px 40px 12px 12px; /* espacio a la derecha para el ícono */
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        font-size: 16px;
+        box-sizing: border-box;
+      }
+      .toggle-password {
+        position: absolute;
+        top: 50%;
+        right: 12px;
+        transform: translateY(-50%);
+        cursor: pointer;
+        user-select: none;
+        font-size: 18px;
+        color: #888;
       }
       .hidden {
         display: none;
@@ -63,25 +102,50 @@
   </head>
   <body>
     <div class="container">
+      <img src="/img/logo.png" alt="Logo" class="logo" />
+      <h1 class="title">DE REMATE</h1>
+
+      <!-- Pantalla de verificación de correo -->
       <div id="verifyEmailUI" class="hidden">
         <div class="icon">✅</div>
         <h2>¡Correo verificado!</h2>
         <p>Ya podés iniciar sesión con tu cuenta.</p>
       </div>
 
+      <!-- Pantalla de restablecimiento de contraseña -->
       <div id="resetPasswordUI" class="hidden">
-        <h2>Restablecer contraseña</h2>
-        <p>Ingresá tu nueva contraseña segura:</p>
-        <div id="resetError" class="message"></div>
-        <input
-          type="password"
-          id="newPassword"
-          placeholder="Nueva contraseña"
-        />
-        <button onclick="resetPassword()">Confirmar</button>
+        <h2>Restablecer Contraseña</h2>
+        <div id="error" class="error"></div>
+        <div class="input-group">
+          <input
+            type="password"
+            id="newPassword"
+            placeholder="Nueva contraseña"
+          />
+          <span
+            class="toggle-password"
+            onclick="togglePassword('newPassword', this)"
+            >👁️</span
+          >
+        </div>
+
+        <div class="input-group">
+          <input
+            type="password"
+            id="confirmPassword"
+            placeholder="Confirmar contraseña"
+          />
+          <span
+            class="toggle-password"
+            onclick="togglePassword('confirmPassword', this)"
+            >👁️</span
+          >
+        </div>
+
+        <button onclick="resetPassword()">Cambiar Contraseña</button>
       </div>
 
-      <div id="generalError" class="message hidden"></div>
+      <div id="generalError" class="error hidden"></div>
     </div>
 
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
@@ -102,7 +166,7 @@
 
         const verifyUI = document.getElementById("verifyEmailUI");
         const resetUI = document.getElementById("resetPasswordUI");
-        const resetError = document.getElementById("resetError");
+        const resetError = document.getElementById("error");
         const generalError = document.getElementById("generalError");
 
         if (mode === "resetPassword") {
@@ -131,23 +195,40 @@
       }
 
       function resetPassword() {
-        const newPass = document.getElementById("newPassword").value;
+        const newPassword = document.getElementById("newPassword").value;
+        const confirmPassword =
+          document.getElementById("confirmPassword").value;
+        const errorDiv = document.getElementById("error");
 
-        if (!isPasswordSecure(newPass)) {
-          resetError.textContent =
-            "Debe tener al menos 8 caracteres, una mayúscula, una minúscula, un número y un símbolo.";
+        if (newPassword !== confirmPassword) {
+          errorDiv.textContent = "Las contraseñas no coinciden.";
+          return;
+        }
+
+        if (!isPasswordSecure(newPassword)) {
+          errorDiv.textContent =
+            "La contraseña debe tener al menos 8 caracteres, incluir mayúsculas, minúsculas, un número y un símbolo.";
+          return;
+        }
+
+        const params = new URLSearchParams(window.location.search);
+        const oobCode = params.get("oobCode");
+
+        if (!oobCode) {
+          errorDiv.textContent = "Código de verificación no válido o faltante.";
           return;
         }
 
         auth
-          .confirmPasswordReset(oobCode, newPass)
+          .confirmPasswordReset(oobCode, newPassword)
           .then(() => {
-            resetError.classList.remove("message");
-            resetError.classList.add("success");
-            resetError.textContent = "¡Contraseña actualizada correctamente!";
+            alert(
+              "Contraseña actualizada con éxito. Ahora podés iniciar sesión."
+            );
           })
           .catch((error) => {
-            resetError.textContent = "Error: " + error.message;
+            console.error(error);
+            errorDiv.textContent = "Ocurrió un error: " + error.message;
           });
       }
 
@@ -160,6 +241,13 @@
       function showGeneralError(msg) {
         generalError.textContent = msg;
         generalError.classList.remove("hidden");
+      }
+
+      function togglePassword(inputId, toggleElement) {
+        const input = document.getElementById(inputId);
+        const isPassword = input.type === "password";
+        input.type = isPassword ? "text" : "password";
+        toggleElement.textContent = isPassword ? "🙈" : "👁️";
       }
 
       // Llamar a la función handleAuth para ejecutar la lógica

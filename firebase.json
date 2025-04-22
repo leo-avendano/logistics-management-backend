@@ -55,6 +55,10 @@
       {
         "source": "/api/route/start",
         "function": "startPendingRoute"
+      },
+      {
+        "source": "/handleAuth",
+        "destination": "/handleAuth.html"
       }
     ]
   }
