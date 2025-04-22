@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Autenticación Firebase</title>
+    <style>
+      body {
+        font-family: "Arial", sans-serif;
+        background-color: #f1f1f1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 100vh;
+        margin: 0;
+      }
+      .container {
+        background-color: #fff;
+        padding: 30px;
+        border-radius: 12px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        max-width: 400px;
+        width: 100%;
+        text-align: center;
+      }
+      h2 {
+        margin-bottom: 16px;
+      }
+      input {
+        width: 100%;
+        padding: 12px;
+        margin-bottom: 16px;
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        font-size: 16px;
+      }
+      button {
+        width: 100%;
+        padding: 12px;
+        background-color: #4285f4;
+        color: white;
+        font-size: 16px;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+      }
+      .message {
+        font-size: 14px;
+        margin-bottom: 16px;
+        color: #d50000;
+      }
+      .success {
+        color: #2e7d32;
+      }
+      .hidden {
+        display: none;
+      }
+      .icon {
+        font-size: 48px;
+        margin-bottom: 12px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div id="verifyEmailUI" class="hidden">
+        <div class="icon">✅</div>
+        <h2>¡Correo verificado!</h2>
+        <p>Ya podés iniciar sesión con tu cuenta.</p>
+      </div>
+
+      <div id="resetPasswordUI" class="hidden">
+        <h2>Restablecer contraseña</h2>
+        <p>Ingresá tu nueva contraseña segura:</p>
+        <div id="resetError" class="message"></div>
+        <input
+          type="password"
+          id="newPassword"
+          placeholder="Nueva contraseña"
+        />
+        <button onclick="resetPassword()">Confirmar</button>
+      </div>
+
+      <div id="generalError" class="message hidden"></div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+
+    <script>
+      const firebaseConfig = {
+        apiKey: "AIzaSyAtvzYw_MsJ1APGxkMxV67hWSp_ajNCvCY",
+        authDomain: "logistics-management-26709.firebaseapp.com",
+      };
+      firebase.initializeApp(firebaseConfig);
+      const auth = firebase.auth();
+
+      const urlParams = new URLSearchParams(window.location.search);
+      const mode = urlParams.get("mode");
+      const oobCode = urlParams.get("oobCode");
+
+      const verifyUI = document.getElementById("verifyEmailUI");
+      const resetUI = document.getElementById("resetPasswordUI");
+      const resetError = document.getElementById("resetError");
+      const generalError = document.getElementById("generalError");
+
+      if (mode === "resetPassword") {
+        if (!oobCode) {
+          showGeneralError("Código inválido para cambio de contraseña.");
+          return;
+        }
+        resetUI.classList.remove("hidden");
+      } else if (mode === "verifyEmail") {
+        if (!oobCode) {
+          showGeneralError("Código inválido para verificación.");
+          return;
+        }
+
+        auth
+          .applyActionCode(oobCode)
+          .then(() => {
+            verifyUI.classList.remove("hidden");
+          })
+          .catch(() => {
+            showGeneralError("Este enlace ya fue usado o no es válido.");
+          });
+      } else {
+        showGeneralError("Acción desconocida.");
+      }
+
+      function resetPassword() {
+        const newPass = document.getElementById("newPassword").value;
+
+        if (!isPasswordSecure(newPass)) {
+          resetError.textContent =
+            "Debe tener al menos 8 caracteres, una mayúscula, una minúscula, un número y un símbolo.";
+          return;
+        }
+
+        auth
+          .confirmPasswordReset(oobCode, newPass)
+          .then(() => {
+            resetError.classList.remove("message");
+            resetError.classList.add("success");
+            resetError.textContent = "¡Contraseña actualizada correctamente!";
+          })
+          .catch((error) => {
+            resetError.textContent = "Error: " + error.message;
+          });
+      }
+
+      function isPasswordSecure(password) {
+        const pattern =
+          /^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%^&+=!?.*()_\-]).{8,}$/;
+        return pattern.test(password);
+      }
+
+      function showGeneralError(msg) {
+        generalError.textContent = msg;
+        generalError.classList.remove("hidden");
+      }
+    </script>
+  </body>
+</html>
